@@ -1,0 +1,91 @@
+# building-a-new-virtual-assistant-using-python1
+#GOOGLE TEXT TO SPEECH
+from gtts import gTTS#google text to speech
+import speech_recognition as sr#to reconize voice
+import playsound#to exctrack sound from system
+from time import ctime#
+import os#to extracting operating system 
+import re#o extract req exp
+import uuid#universal unique id i.e every voive is different
+import smtplib#simple mail transmit protocol library
+import webbrowser
+
+#to make sure it listens
+def listen():
+    r = sr.Recognizer()
+    with sr.Microphone() as source:#to access voice from microphone with is keyword
+        print("Start talking")
+        audio = r.listen(source,phrase_time_limit=5)#to reache voice in 5 sec
+    data = ""#to add data
+    #exception handling
+    try:
+        data = r.recognize_google(audio,language='en-US')#us language
+        print("You said:"+data)#data added to empty string data=""
+    except sr.UnknownValueError:
+        print("I cannot hear you")#if not worked
+    except sr.RequestError as e:
+        print("Request Failed")
+    return data
+#to respond back with audio
+def respond(String):
+    print(String)
+    tts = gTTS(text = String,lang='en-US')#text to speech (tts)
+    tts.save("speech.mp3")
+    filename = "Speech%s.mp3"%str(uuid.uuid4())#to save data in string
+    tts.save(filename)
+    playsound.playsound(filename)
+    os.remove(filename)
+#start giving actions
+#virtual assistant actions
+def virtual_assistant(data):
+    """give your actions"""
+    if "how are you" in data:
+        listening = True
+        respond("Good and doing well")
+    if "time" in data:
+        listening = True
+        respond(ctime())
+    if "open google" in data.casefold():#casefold:to accepts both capital and small
+        listening = True
+        url = "https://www.google.com/"
+        webbrowser.open(url)
+        respond("Success")
+    if "locate" in data:
+        webbrowser.open('https://www.google.com/maps/search/'+
+                        data.replace("locate",""))
+        result="Located"
+        respond("Located {}".format(data.replace("locate","")))
+    if "email" in data:
+        listening = True
+        respond("Whom should i send email to?")
+        to = listen().lower()
+        edict = {"sweety":"sivanigottumukkala03@gmail.com"}#give mail ids
+        toaddr = edict[to]
+        respond("What is the Subject?")
+        subject = listen()
+        respond("What should i tell that person?")
+        message = listen()
+        content = 'Subject :{}\n\n'.format(subject,message)
+        #init gmail SMTP
+        mail = smtplib.SMTP('smtp.gmail.com',587)#source mail,587 -port code
+        #identify the server
+        mail.ehlo()
+        mail.starttls()
+        #login
+        mail.login('sivanigottumukkala03@gmail.com','xdok brgk otab mlxr')
+        mail.sendmail('sivanigottumukkala03@gmail.com',toaddr,content)
+        mail.close()
+        respond('Email Sent')
+    if "stop" in data:
+        listening = False
+        print("Listening Stopped")
+        respond("Okay done take care...")
+    try:
+        return listening
+    except UnboundLocalError:
+        print("Timeout")
+respond("Hey sivani how are you")
+listening = True
+while listening == True:
+    data = listen()
+    listening = virtual_assistant(data)
